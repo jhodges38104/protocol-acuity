@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical Trial Complexity Assessment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* Art direction: clinical research tool -> precise, trustworthy, academic
+   Palette: cool neutral surfaces, teal accent (Nexus) -- clinical/scientific rigor
+   Typography: General Sans (display + body) -- clean, legible, modern grotesk
+   Density: balanced, data-forward */
+:root, [data-theme="light"] {
+  --color-bg:#f7f6f2; --color-surface:#f9f8f5; --color-surface-2:#fbfbf9;
+  --color-surface-offset:#f3f0ec; --color-surface-offset-2:#edeae5; --color-surface-dynamic:#e6e4df;
+  --color-divider:#dcd9d5; --color-border:#d4d1ca;
+  --color-text:#28251d; --color-text-muted:#7a7974; --color-text-faint:#bab9b4; --color-text-inverse:#f9f8f4;
+  --color-primary:#01696f; --color-primary-hover:#0c4e54; --color-primary-active:#0f3638; --color-primary-highlight:#cedcd8;
+  --color-warning:#964219; --color-warning-highlight:#ddcfc6;
+  --color-success:#437a22; --color-success-highlight:#d4dfcc;
+  --color-error:#a12c7b; --color-error-highlight:#e0ced7;
+  --color-gold:#d19900; --color-gold-highlight:#e9e0c6;
+  --radius-sm:.375rem; --radius-md:.5rem; --radius-lg:.75rem; --radius-xl:1rem; --radius-full:9999px;
+  --transition-interactive:180ms cubic-bezier(.16,1,.3,1);
+  --shadow-sm:0 1px 2px oklch(.2 .01 80/.06); --shadow-md:0 4px 12px oklch(.2 .01 80/.08); --shadow-lg:0 12px 32px oklch(.2 .01 80/.12);
+  --content-default:1000px;
+  --font-display:'General Sans','Helvetica Neue',sans-serif; --font-body:'General Sans','Helvetica Neue',sans-serif;
+}
+[data-theme="dark"] {
+  --color-bg:#171614; --color-surface:#1c1b19; --color-surface-2:#201f1d; --color-surface-offset:#1d1c1a;
+  --color-surface-offset-2:#22211f; --color-surface-dynamic:#2d2c2a; --color-divider:#262523; --color-border:#393836;
+  --color-text:#cdccca; --color-text-muted:#797876; --color-text-faint:#5a5957; --color-text-inverse:#2b2a28;
+  --color-primary:#4f98a3; --color-primary-hover:#227f8b; --color-primary-active:#1a626b; --color-primary-highlight:#313b3b;
+  --color-warning:#bb653b; --color-warning-highlight:#564942;
+  --color-success:#6daa45; --color-success-highlight:#3a4435;
+  --color-error:#d163a7; --color-error-highlight:#4c3d46;
+  --color-gold:#e8af34; --color-gold-highlight:#4d4332;
+  --shadow-sm:0 1px 2px oklch(0 0 0/.2); --shadow-md:0 4px 12px oklch(0 0 0/.3); --shadow-lg:0 12px 32px oklch(0 0 0/.4);
+}
+:root{--text-xs:clamp(.75rem,.7rem + .25vw,.875rem);--text-sm:clamp(.875rem,.8rem + .35vw,1rem);--text-base:clamp(1rem,.95rem + .25vw,1.125rem);--text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);--text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);--text-2xl:clamp(2rem,1.2rem + 2.5vw,3rem);
+--space-1:.25rem;--space-2:.5rem;--space-3:.75rem;--space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;--space-8:2rem;--space-10:2.5rem;--space-12:3rem;--space-16:4rem;--space-20:5rem;--space-24:6rem;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth}
+body{min-height:100dvh;line-height:1.6;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg)}
+img,svg{display:block;max-width:100%}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;line-height:1.2}
+p{text-wrap:pretty}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:none}
+:focus-visible{outline:2px solid var(--color-primary);outline-offset:3px;border-radius:var(--radius-sm)}
+a{color:var(--color-primary)}
+.container{max-width:var(--content-default);margin-inline:auto;padding-inline:var(--space-6)}
+header.site{position:sticky;top:0;z-index:20;background:color-mix(in oklab,var(--color-bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--color-divider)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding-block:var(--space-4)}
+.brand{display:flex;align-items:center;gap:var(--space-3)}
+.brand-name{font-family:var(--font-display);font-weight:600;font-size:var(--text-base)}
+.theme-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);border:1px solid var(--color-border);color:var(--color-text-muted);transition:var(--transition-interactive)}
+.theme-btn:hover{background:var(--color-surface-offset);color:var(--color-text)}
+.hero{padding-block:var(--space-12) var(--space-6)}
+.eyebrow{font-size:var(--text-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--color-primary);font-weight:600;margin-bottom:var(--space-3)}
+.hero h1{font-size:var(--text-xl);font-weight:700;margin-bottom:var(--space-3);max-width:40ch}
+.hero p{color:var(--color-text-muted);max-width:64ch;font-size:var(--text-base)}
+
+/* Upload zone */
+.upload-zone{margin-top:var(--space-8);border:2px dashed var(--color-border);border-radius:var(--radius-xl);background:var(--color-surface);padding:var(--space-8);text-align:center;transition:var(--transition-interactive);cursor:pointer}
+.upload-zone.dragover{border-color:var(--color-primary);background:var(--color-primary-highlight)}
+.upload-zone svg{margin-inline:auto;color:var(--color-text-faint);margin-bottom:var(--space-3)}
+.upload-zone h3{font-size:var(--text-base);font-weight:600;margin-bottom:var(--space-1)}
+.upload-zone p{color:var(--color-text-muted);font-size:var(--text-sm)}
+.upload-zone input[type=file]{display:none}
+.upload-btn{display:inline-block;margin-top:var(--space-4);background:var(--color-primary);color:var(--color-text-inverse);padding:var(--space-2) var(--space-5);border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:600;transition:var(--transition-interactive)}
+.upload-btn:hover{background:var(--color-primary-hover)}
+.file-info{display:none;margin-top:var(--space-6);background:var(--color-surface-2);border:1px solid var(--color-divider);border-radius:var(--radius-lg);padding:var(--space-4) var(--space-5);text-align:left;align-items:center;gap:var(--space-3)}
+.file-info.show{display:flex}
+.file-info .icon{flex-shrink:0;color:var(--color-primary)}
+.file-info .meta{flex:1;min-width:0}
+.file-info .fname{font-weight:600;font-size:var(--text-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-info .fstats{color:var(--color-text-muted);font-size:var(--text-xs)}
+.file-info .clear{color:var(--color-text-faint);font-size:var(--text-xs);border:1px solid var(--color-border);padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);flex-shrink:0}
+.file-info .clear:hover{color:var(--color-text);background:var(--color-surface-offset)}
+.progress-wrap{display:none;margin-top:var(--space-4)}
+.progress-wrap.show{display:block}
+.progress-track{height:6px;background:var(--color-surface-offset-2);border-radius:var(--radius-full);overflow:hidden}
+.progress-fill{height:100%;background:var(--color-primary);width:0%;transition:width 200ms ease}
+.progress-label{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-2)}
+.paste-toggle{margin-top:var(--space-4);font-size:var(--text-sm);color:var(--color-primary);text-decoration:underline;text-decoration-color:transparent;transition:var(--transition-interactive)}
+.paste-toggle:hover{text-decoration-color:var(--color-primary)}
+.paste-area{display:none;margin-top:var(--space-4)}
+.paste-area.show{display:block}
+.paste-area textarea{width:100%;min-height:140px;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-3);font-family:var(--font-body);font-size:var(--text-sm);color:var(--color-text);resize:vertical}
+.paste-area .analyze-btn{margin-top:var(--space-3);background:var(--color-primary);color:var(--color-text-inverse);padding:var(--space-2) var(--space-5);border-radius:var(--radius-md);font-size:var(--text-sm);font-weight:600;transition:var(--transition-interactive)}
+.paste-area .analyze-btn:hover{background:var(--color-primary-hover)}
+.error-msg{display:none;margin-top:var(--space-4);background:var(--color-error-highlight);color:var(--color-error);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);font-size:var(--text-sm)}
+.error-msg.show{display:block}
+
+.score-panel{margin-top:var(--space-8);background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-xl);padding:var(--space-6);display:grid;grid-template-columns:auto 1fr;gap:var(--space-8);align-items:center}
+@media (max-width:680px){.score-panel{grid-template-columns:1fr;text-align:center}}
+.score-ring{position:relative;width:140px;height:140px;flex-shrink:0;margin-inline:auto}
+.score-ring svg{transform:rotate(-90deg)}
+.score-ring .track{stroke:var(--color-surface-offset-2)}
+.score-ring .fill{stroke:var(--color-primary);transition:stroke-dashoffset 500ms var(--transition-interactive)}
+.score-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num .val{font-family:var(--font-display);font-size:var(--text-xl);font-weight:700;font-variant-numeric:tabular-nums}
+.score-num .max{font-size:var(--text-xs);color:var(--color-text-muted)}
+.score-detail .tier{display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-1) var(--space-3);border-radius:var(--radius-full);font-size:var(--text-sm);font-weight:600;margin-bottom:var(--space-2)}
+.tier-low{background:var(--color-success-highlight);color:var(--color-success)}
+.tier-mod{background:var(--color-gold-highlight);color:var(--color-gold)}
+.tier-high{background:var(--color-warning-highlight);color:var(--color-warning)}
+.tier-veryhigh{background:var(--color-error-highlight);color:var(--color-error)}
+.score-detail p{color:var(--color-text-muted);font-size:var(--text-sm);max-width:52ch}
+.score-source{font-size:var(--text-xs);color:var(--color-text-faint);margin-top:var(--space-2)}
+
+section.rubric{padding-block:var(--space-8)}
+.rubric-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--space-6);flex-wrap:wrap;gap:var(--space-3)}
+.rubric-header h2{font-size:var(--text-lg);font-weight:700}
+.reset-btn{font-size:var(--text-sm);color:var(--color-text-muted);border:1px solid var(--color-border);padding:var(--space-2) var(--space-4);border-radius:var(--radius-md);transition:var(--transition-interactive)}
+.reset-btn:hover{background:var(--color-surface-offset);color:var(--color-text)}
+.criterion{background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);padding:var(--space-5);margin-bottom:var(--space-4);transition:var(--transition-interactive)}
+.criterion.auto-set{border-color:var(--color-primary)}
+.criterion-top{display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-4);margin-bottom:var(--space-3)}
+.criterion-title{font-weight:600;font-size:var(--text-base);display:flex;align-items:center;gap:var(--space-2)}
+.auto-badge{font-size:var(--text-xs);background:var(--color-primary-highlight);color:var(--color-primary);padding:2px var(--space-2);border-radius:var(--radius-full);font-weight:600}
+.criterion-weight{font-size:var(--text-xs);color:var(--color-text-faint);flex-shrink:0}
+.criterion-desc{color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-4);max-width:70ch}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--space-2)}
+.scale label{position:relative}
+.scale input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.scale .opt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-1);padding:var(--space-2) var(--space-1);border-radius:var(--radius-md);border:1px solid var(--color-border);background:var(--color-surface-2);text-align:center;transition:var(--transition-interactive);min-height:56px}
+.scale .opt .n{font-weight:700;font-variant-numeric:tabular-nums;font-size:var(--text-sm)}
+.scale .opt .lbl{font-size:var(--text-xs);color:var(--color-text-muted);line-height:1.25}
+.scale input:checked + .opt{background:var(--color-primary-highlight);border-color:var(--color-primary)}
+.scale input:checked + .opt .n{color:var(--color-primary)}
+.scale input:focus-visible + .opt{outline:2px solid var(--color-primary);outline-offset:2px}
+.notes{margin-top:var(--space-3);font-size:var(--text-sm);color:var(--color-text-faint);border-top:1px dashed var(--color-divider);padding-top:var(--space-3)}
+.notes strong{color:var(--color-text-muted)}
+footer.site{border-top:1px solid var(--color-divider);padding-block:var(--space-8);margin-top:var(--space-8)}
+footer.site p{color:var(--color-text-faint);font-size:var(--text-xs);text-align:center;max-width:72ch;margin-inline:auto}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="container header-inner">
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="logo">
+        <circle cx="14" cy="14" r="12" stroke="currentColor" stroke-width="2" style="color:var(--color-primary)"/>
+        <path d="M9 14.5L12.5 18L19 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-primary)"/>
+      </svg>
+      <span class="brand-name">Trial Complexity Assessment</span>
+    </div>
+    <button class="theme-btn" data-theme-toggle aria-label="Switch to dark mode">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <div class="eyebrow">Protocol Complexity Rubric</div>
+    <h1>Upload any clinical research protocol to assess its complexity</h1>
+    <p>Drop in a protocol PDF or text file (or paste text directly) and the tool scans it for complexity signals — sub-studies, sites, amendments, consent pathways, biospecimens, and more — then auto-fills a weighted rubric. Every rating stays fully editable.</p>
+
+    <div class="upload-zone" id="uploadZone">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v12m0-12l-4 4m4-4l4 4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      <h3>Drag & drop a protocol file</h3>
+      <p>PDF or .txt — analysis runs entirely in your browser</p>
+      <label class="upload-btn" for="fileInput">Choose file</label>
+      <input type="file" id="fileInput" accept=".pdf,.txt">
+    </div>
+
+    <div class="file-info" id="fileInfo">
+      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 3v4a1 1 0 001 1h4M7 3h6l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"/></svg>
+      <div class="meta">
+        <div class="fname" id="fileName">—</div>
+        <div class="fstats" id="fileStats">—</div>
+      </div>
+      <button class="clear" id="clearFile">Remove</button>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-label" id="progressLabel">Reading document…</div>
+    </div>
+
+    <div class="error-msg" id="errorMsg"></div>
+
+    <button class="paste-toggle" id="pasteToggle">Or paste protocol text instead</button>
+    <div class="paste-area" id="pasteArea">
+      <textarea id="pasteText" placeholder="Paste protocol text here…"></textarea>
+      <button class="analyze-btn" id="analyzeBtn">Analyze pasted text</button>
+    </div>
+
+    <div class="score-panel">
+      <div class="score-ring">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle class="track" cx="70" cy="70" r="60" fill="none" stroke-width="12"></circle>
+          <circle id="fillRing" class="fill" cx="70" cy="70" r="60" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377"></circle>
+        </svg>
+        <div class="score-num"><span class="val" id="scoreVal">0</span><span class="max">of 40</span></div>
+      </div>
+      <div class="score-detail">
+        <span class="tier" id="tierBadge">—</span>
+        <p id="tierDesc">Upload a protocol above, or rate each criterion manually below.</p>
+        <p class="score-source" id="scoreSource"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="rubric">
+    <div class="rubric-header">
+      <h2>Complexity criteria</h2>
+      <button class="reset-btn" id="resetBtn">Reset all to Minimal</button>
+    </div>
+    <div id="criteriaList"></div>
+  </section>
+</main>
+
+<footer class="site">
+  <div class="container"><p>Document analysis is a keyword/pattern-based heuristic run locally in your browser (no data leaves your device). Auto-filled ratings are a starting estimate — review and adjust each criterion based on your own reading of the protocol.</p></div>
+</footer>
+
+<script>
+const criteria = [
+  {
+    key:"design", title:"Study design & sub-studies", weight:1,
+    desc:"Number of nested designs (observational cohort, PK/mechanistic sub-study, exploratory aims) and how distinct their populations and procedures are.",
+    patterns:[/sub-?study/gi,/exploratory aim/gi,/pk study/gi,/pharmacokinetic/gi,/randomiz/gi,/\barm\b/gi,/cohort/gi,/phase\s(i|1|ii|2|iii|3)/gi]
+  },
+  {
+    key:"duration", title:"Duration & endpoint definition", weight:1,
+    desc:"Whether the study has a fixed endpoint/sample size or runs indefinitely with open-ended accrual.",
+    patterns:[/longitudinal/gi,/no specific endpoint/gi,/ongoing/gi,/lifespan/gi,/long-?term follow-?up/gi,/indefinite/gi,/life stage/gi]
+  },
+  {
+    key:"sites", title:"Multi-site / multi-institutional coordination", weight:1,
+    desc:"Number of collaborating and affiliate sites, and whether site-specific protocol modifications exist.",
+    patterns:[/collaborating site/gi,/affiliate site/gi,/participating (institution|center|centre)/gi,/multi-?site/gi,/multi-?center/gi,/multi-?centre/gi]
+  },
+  {
+    key:"population", title:"Population transitions & consent complexity", weight:1,
+    desc:"Age-related consent changes, pediatric-to-adult transitions, language/waiver considerations.",
+    patterns:[/age of majority/gi,/transition to adult/gi,/assent/gi,/waiver of consent/gi,/non-?english/gi,/pediatric/gi,/legally authorized representative/gi]
+  },
+  {
+    key:"procedures", title:"Breadth of required & optional procedures", weight:1,
+    desc:"Number of clinical domains assessed and optional add-on evaluations (biospecimens, questionnaires, screenings).",
+    patterns:[/questionnaire/gi,/neuropsycholog/gi,/biopsy/gi,/imaging/gi,/screening/gi,/quality of life/gi,/optional evaluation/gi,/blood sample/gi,/mri|ct scan|echocardiogram|doppler/gi]
+  },
+  {
+    key:"data", title:"Data management & biorepository burden", weight:1,
+    desc:"Complexity of merging clinical data across systems, retrospective abstraction, and specimen banking/tracking.",
+    patterns:[/retrospective (data|chart)/gi,/bank(ing|ed) (of )?(sample|specimen|blood|urine|dna)/gi,/data abstraction/gi,/database/gi,/biorepository/gi,/electronic health record/gi]
+  },
+  {
+    key:"remote", title:"Modality flexibility (remote/hybrid procedures)", weight:1,
+    desc:"Degree to which visits can be conducted via telehealth, phone, or in-person, and the coordination this requires.",
+    patterns:[/remote visit/gi,/telehealth/gi,/video conferenc/gi,/telephone visit/gi,/virtual visit/gi]
+  },
+  {
+    key:"oversight", title:"Safety oversight & regulatory history", weight:1,
+    desc:"Presence of a DSMB, distinct AE reporting pathways, and volume of amendments/revisions over time.",
+    patterns:[/data and safety monitoring board/gi,/dsmb/gi,/adverse event/gi,/amendment \d/gi,/revision \d/gi,/serious adverse/gi]
+  }
+];
+
+const scaleLabels = ["Minimal","Low","Moderate","High","Very High"];
+const list = document.getElementById('criteriaList');
+
+criteria.forEach(c => {
+  const wrap = document.createElement('div');
+  wrap.className = 'criterion';
+  wrap.id = 'crit-' + c.key;
+  const options = [1,2,3,4,5].map(n => `
+    <label>
+      <input type="radio" name="${c.key}" value="${n}" ${n===1?'checked':''}>
+      <span class="opt"><span class="n">${n}</span><span class="lbl">${scaleLabels[n-1]}</span></span>
+    </label>`).join('');
+  wrap.innerHTML = `
+    <div class="criterion-top">
+      <div class="criterion-title">${c.title}<span class="auto-badge" id="badge-${c.key}" style="display:none">Auto-detected</span></div>
+      <div class="criterion-weight">Weight ×${c.weight}</div>
+    </div>
+    <div class="criterion-desc">${c.desc}</div>
+    <div class="scale">${options}</div>
+    <div class="notes" id="notes-${c.key}" style="display:none"><strong>Detected signals:</strong> <span></span></div>`;
+  list.appendChild(wrap);
+});
+
+const maxScore = criteria.reduce((s,c)=>s+5*c.weight,0);
+const circumference = 2 * Math.PI * 60;
+const fillRing = document.getElementById('fillRing');
+fillRing.setAttribute('stroke-dasharray', circumference.toFixed(1));
+document.querySelector('.max').textContent = 'of ' + maxScore;
+
+function tierFor(pct){
+  if(pct < 0.4) return {cls:'tier-low', label:'Low complexity', desc:'Standard operational burden; typical single-site trial procedures.'};
+  if(pct < 0.6) return {cls:'tier-mod', label:'Moderate complexity', desc:'Some added coordination or procedural breadth beyond a routine trial.'};
+  if(pct < 0.8) return {cls:'tier-high', label:'High complexity', desc:'Substantial multi-site, multi-design, or data-management burden requiring dedicated infrastructure.'};
+  return {cls:'tier-veryhigh', label:'Very high complexity', desc:'Extensive nested designs, indefinite duration, and multi-institutional coordination demanding significant sustained resourcing.'};
+}
+
+function calculate(){
+  let total = 0;
+  criteria.forEach(c => {
+    const checked = document.querySelector(`input[name="${c.key}"]:checked`);
+    total += checked ? parseInt(checked.value,10) * c.weight : 0;
+  });
+  const pct = total / maxScore;
+  document.getElementById('scoreVal').textContent = total;
+  const offset = circumference * (1 - pct);
+  fillRing.setAttribute('stroke-dashoffset', offset.toFixed(1));
+  const t = tierFor(pct);
+  const badge = document.getElementById('tierBadge');
+  badge.className = 'tier ' + t.cls;
+  badge.textContent = t.label + ' (' + Math.round(pct*100) + '%)';
+  document.getElementById('tierDesc').textContent = t.desc;
+}
+
+list.addEventListener('change', calculate);
+document.getElementById('resetBtn').addEventListener('click', () => {
+  criteria.forEach(c => {
+    document.querySelector(`input[name="${c.key}"][value="1"]`).checked = true;
+    document.getElementById('badge-'+c.key).style.display = 'none';
+    document.getElementById('notes-'+c.key).style.display = 'none';
+    document.getElementById('crit-'+c.key).classList.remove('auto-set');
+  });
+  document.getElementById('scoreSource').textContent = '';
+  calculate();
+});
+
+calculate();
+
+/* ---------- Document analysis engine ---------- */
+
+function scoreFromMatchCount(count){
+  if(count === 0) return 1;
+  if(count <= 2) return 2;
+  if(count <= 5) return 3;
+  if(count <= 10) return 4;
+  return 5;
+}
+
+function analyzeText(text, sourceLabel){
+  const wordCount = (text.match(/\S+/g) || []).length;
+  let totalScore = 0;
+
+  criteria.forEach(c => {
+    let matched = [];
+    c.patterns.forEach(p => {
+      const m = text.match(p);
+      if(m && m.length){
+        const uniq = [...new Set(m.map(x=>x.toLowerCase()))];
+        matched.push(...uniq);
+      }
+    });
+    matched = [...new Set(matched)];
+    const rating = scoreFromMatchCount(matched.length);
+    totalScore += rating;
+
+    document.querySelector(`input[name="${c.key}"][value="${rating}"]`).checked = true;
+    const badge = document.getElementById('badge-'+c.key);
+    const notesEl = document.getElementById('notes-'+c.key);
+    const critEl = document.getElementById('crit-'+c.key);
+    badge.style.display = 'inline-block';
+    critEl.classList.add('auto-set');
+    if(matched.length){
+      notesEl.style.display = 'block';
+      notesEl.querySelector('span').textContent = matched.slice(0,8).join(', ') + (matched.length>8 ? ', …' : '') + ` (${matched.length} distinct term${matched.length===1?'':'s'} found)`;
+    } else {
+      notesEl.style.display = 'block';
+      notesEl.querySelector('span').textContent = 'No signal terms detected — defaulted to Minimal.';
+    }
+  });
+
+  calculate();
+  document.getElementById('scoreSource').textContent = `Auto-scored from ${sourceLabel} (~${wordCount.toLocaleString()} words). Review and adjust ratings as needed.`;
+}
+
+/* ---------- File handling ---------- */
+
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+const fileStats = document.getElementById('fileStats');
+const clearFile = document.getElementById('clearFile');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+const errorMsg = document.getElementById('errorMsg');
+const pasteToggle = document.getElementById('pasteToggle');
+const pasteArea = document.getElementById('pasteArea');
+const pasteText = document.getElementById('pasteText');
+const analyzeBtn = document.getElementById('analyzeBtn');
+
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+function showError(msg){
+  errorMsg.textContent = msg;
+  errorMsg.classList.add('show');
+  setTimeout(()=>errorMsg.classList.remove('show'), 6000);
+}
+
+function setProgress(pct, label){
+  progressWrap.classList.add('show');
+  progressFill.style.width = pct + '%';
+  progressLabel.textContent = label;
+  if(pct >= 100){
+    setTimeout(()=>progressWrap.classList.remove('show'), 600);
+  }
+}
+
+async function extractPdfText(arrayBuffer){
+  const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+  let fullText = '';
+  const numPages = pdf.numPages;
+  for(let i=1; i<=numPages; i++){
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    fullText += content.items.map(it => it.str).join(' ') + '\n';
+    setProgress(Math.round((i/numPages)*100), `Reading page ${i} of ${numPages}…`);
+  }
+  return fullText;
+}
+
+async function handleFile(file){
+  errorMsg.classList.remove('show');
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  const isTxt = file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt');
+
+  if(!isPdf && !isTxt){
+    showError('Please upload a PDF or .txt file.');
+    return;
+  }
+
+  fileName.textContent = file.name;
+  fileStats.textContent = (file.size/1024).toFixed(0) + ' KB';
+  fileInfo.classList.add('show');
+  setProgress(5, 'Reading document…');
+
+  try {
+    let text = '';
+    if(isPdf){
+      if(!window.pdfjsLib){ showError('PDF engine failed to load. Try pasting the text instead.'); return; }
+      const buf = await file.arrayBuffer();
+      text = await extractPdfText(buf);
+    } else {
+      text = await file.text();
+      setProgress(100, 'Done');
+    }
+    if(!text || text.trim().length < 50){
+      showError('Could not extract readable text from this file. Try pasting the text instead.');
+      return;
+    }
+    setProgress(100, 'Analysis complete');
+    analyzeText(text, file.name);
+  } catch(err){
+    showError('Error reading file: ' + err.message + '. Try pasting the text instead.');
+    progressWrap.classList.remove('show');
+  }
+}
+
+uploadZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+
+['dragenter','dragover'].forEach(evt => uploadZone.addEventListener(evt, e => {
+  e.preventDefault(); uploadZone.classList.add('dragover');
+}));
+['dragleave','drop'].forEach(evt => uploadZone.addEventListener(evt, e => {
+  e.preventDefault(); uploadZone.classList.remove('dragover');
+}));
+uploadZone.addEventListener('drop', e => {
+  const file = e.dataTransfer.files[0];
+  if(file) handleFile(file);
+});
+
+clearFile.addEventListener('click', e => {
+  e.stopPropagation();
+  fileInfo.classList.remove('show');
+  fileInput.value = '';
+});
+
+pasteToggle.addEventListener('click', () => {
+  pasteArea.classList.toggle('show');
+});
+analyzeBtn.addEventListener('click', () => {
+  const text = pasteText.value;
+  if(text.trim().length < 50){
+    showError('Please paste at least a few sentences of protocol text.');
+    return;
+  }
+  analyzeText(text, 'pasted text');
+});
+
+(function(){const t=document.querySelector('[data-theme-toggle]'),r=document.documentElement;let d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';r.setAttribute('data-theme',d);t&&t.addEventListener('click',()=>{d=d==='dark'?'light':'dark';r.setAttribute('data-theme',d);t.setAttribute('aria-label','Switch to '+(d==='dark'?'light':'dark')+' mode');t.innerHTML=d==='dark'?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>':'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'})})();
+</script>
+</body>
+</html>
